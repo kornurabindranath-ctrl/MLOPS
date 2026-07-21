@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+
+  redis:
+    image: redis:7-alpine
+    container_name: feast-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  api:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile
+
+    container_name: feature-store-api
+
+    depends_on:
+      - redis
+
+    ports:
+      - "8000:8000"
+
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+    volumes:
+      - ../../:/app

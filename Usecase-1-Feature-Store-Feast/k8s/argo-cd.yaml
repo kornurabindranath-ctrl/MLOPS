@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: feature-store
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/kornurabindranath-ctrl/MLOPS.git
+    targetRevision: main
+    path: Usecase-1-Feature-Store-Feast/k8s
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: feature-store
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+    syncOptions:
+    - CreateNamespace=true
