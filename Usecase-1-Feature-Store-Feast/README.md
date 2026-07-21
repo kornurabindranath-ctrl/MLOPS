@@ -1,4 +1,194 @@
-# Feature-Store-Feast
+# 🚀 Production MLOps Feature Store with Feast on Amazon EKS
+
+A production-style Feature Store built using **Feast**, **FastAPI**, **Redis**, **Docker**, **Amazon EKS**, **Argo CD**, **GitHub Actions**, **Prometheus**, **Grafana**, and **Horizontal Pod Autoscaler (HPA)**.
+
+This project demonstrates how machine learning features are engineered, materialized, served, monitored, and automatically scaled on Kubernetes using GitOps and modern DevOps practices.
+
+# High-Level Architecture
+
+```mermaid
+flowchart TB
+
+%% =====================================================
+%% DEVELOPMENT
+%% =====================================================
+
+subgraph DEV["👨‍💻 Development & CI/CD"]
+
+A["Developer
+
+• Write Code
+• Create Features
+• Update Kubernetes Manifests"]
+
+B["GitHub Repository
+
+• Source Code
+• Dockerfile
+• Kubernetes YAML
+• GitHub Actions"]
+
+C["GitHub Actions
+
+• Install Dependencies
+• Build Docker Image
+• Push Image"]
+
+D["Amazon ECR
+
+Stores Docker Images"]
+
+A --> B
+B --> C
+C --> D
+
+end
+
+
+%% =====================================================
+%% GITOPS
+%% =====================================================
+
+subgraph GITOPS["🚀 GitOps Deployment"]
+
+E["Argo CD
+
+• Watches Git Repository
+• Detects Changes
+• Syncs Kubernetes"]
+
+end
+
+D --> E
+
+
+%% =====================================================
+%% KUBERNETES
+%% =====================================================
+
+subgraph K8S["☸ Amazon EKS Cluster"]
+
+F["Feature Store Deployment
+
+• FastAPI
+• Feast SDK
+• Logging
+• Middleware"]
+
+G["FastAPI Pods
+
+Replica 1
+Replica 2
+Replica N"]
+
+H["Redis
+
+Online Feature Store"]
+
+I["Service
+
+Internal Load Balancer"]
+
+F --> G
+G --> H
+I --> G
+
+end
+
+E --> F
+
+
+%% =====================================================
+%% FEATURE STORE
+%% =====================================================
+
+subgraph FEAST["🟨 Feast Feature Store"]
+
+J["Synthetic Data"]
+
+K["Parquet Files"]
+
+L["File Source"]
+
+M["Entity"]
+
+N["Feature Views"]
+
+O["Feature Service"]
+
+P["Registry"]
+
+Q["Materialization"]
+
+J --> K
+K --> L
+M --> N
+L --> N
+N --> O
+N --> P
+P --> Q
+
+end
+
+Q --> H
+
+
+%% =====================================================
+%% CLIENT
+%% =====================================================
+
+subgraph CLIENT["🌐 Feature Serving"]
+
+R["Client / ML Application"]
+
+end
+
+R --> I
+
+
+%% =====================================================
+%% OBSERVABILITY
+%% =====================================================
+
+subgraph OBS["📊 Monitoring"]
+
+S["Prometheus
+
+Scrapes Metrics"]
+
+T["Grafana
+
+Dashboards"]
+
+U["Metrics Server"]
+
+G --> S
+S --> T
+U --> S
+
+end
+
+
+%% =====================================================
+%% AUTOSCALING
+%% =====================================================
+
+subgraph SCALE["⚡ Kubernetes Autoscaling"]
+
+V["Horizontal Pod Autoscaler
+
+CPU Target: 70%"]
+
+W["Load Testing
+
+hey"]
+
+U --> V
+V --> F
+W --> I
+
+end
+```
 
 check python 
 
@@ -2152,6 +2342,88 @@ Requests by Status	Time series	sum by (status)(rate(http_requests_total[1m]))
 # Kubernetes Horizontal Pod Autoscaler (HPA)
 
 
+Verify Metrics Server
+
+bash
+```
+kubectl get deployment metrics-server -n kube-system
+
+kubectl top nodes
+
+kubectl top pods -A
+```
+
+<img width="2714" height="1660" alt="image" src="https://github.com/user-attachments/assets/ce13b5c5-bb1d-467e-8ec1-2717683aaf2d" />
+
+creating a HPA
+
+bash
+```
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: feature-store-api
+  namespace: feature-store
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: feature-store-api
+
+  minReplicas: 2
+  maxReplicas: 10
+
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+```
+
+reduce replicas to 2 and commit to argo cd to sync the chnages to the cluster
+
+verfiy the HPA
+
+bash
+```
+kubectl get hpa -n feature-store
+```
+
+<img width="2864" height="232" alt="image" src="https://github.com/user-attachments/assets/e66e701e-3032-4003-8a7a-a480a6909635" />
+
+## Install a load generator
+
+bash
+```
+brew install hey
+```
+
+Port-forward the application
+
+bash
+```
+kubectl port-forward svc/feature-store-api -n feature-store 8000:80
+```
+
+generate load
+
+bash
+```
+hey -z 5m -c 100 http://localhost:8000/health
+```
 
 
+port forward
+
+bash
+```
+kubectl port-forward svc/feature-store-api -n feature-store 8000:80
+```
+
+
+<img width="2940" height="314" alt="image" src="https://github.com/user-attachments/assets/57797e8a-a479-466c-b682-ea52cb69d85d" />
+
+<img width="2896" height="1666" alt="image" src="https://github.com/user-attachments/assets/0d09e174-3572-46ba-91c3-56280126387a" />
 
