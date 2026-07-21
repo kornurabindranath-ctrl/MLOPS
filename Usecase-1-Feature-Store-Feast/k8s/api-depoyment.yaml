@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
       - name: feature-store-api
-        image: 497508796460.dkr.ecr.ap-south-1.amazonaws.com/feature-store-api:2.0 
+        image: 497508796460.dkr.ecr.ap-south-1.amazonaws.com/feature-store-api:2.1 
         imagePullPolicy: Always
 
         ports:
