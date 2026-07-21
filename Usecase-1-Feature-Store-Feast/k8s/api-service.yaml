@@ -3,13 +3,13 @@ kind: Service
 metadata:
   name: feature-store-api
   namespace: feature-store
-
+  labels:
+    app: feature-store-api
 spec:
   selector:
     app: feature-store-api
-
   ports:
-  - port: 80
-    targetPort: 8000
-
+    - name: http          # <-- Required
+      port: 80
+      targetPort: 8000
   type: ClusterIP
